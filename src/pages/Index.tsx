@@ -1,15 +1,15 @@
-
 import { useState, useEffect } from "react";
 import { Task, TaskFormData } from "@/types/task";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
-import { Plus, LogOut } from "lucide-react";
+import { Plus } from "lucide-react";
 import TaskList from "@/components/TaskList";
 import TaskForm from "@/components/TaskForm";
 import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/context/AuthContext";
+import AppNavigation from "@/components/AppNavigation";
 import {
   fetchTasks,
   createTask as apiCreateTask,
@@ -25,9 +25,8 @@ const TodoApp = () => {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   
   const { toast: uiToast } = useToast();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
-  // Fetch tasks from API
   useEffect(() => {
     const loadTasks = async () => {
       try {
@@ -62,7 +61,6 @@ const TodoApp = () => {
       setTasks(prev => [newTask, ...prev]);
       setIsFormOpen(false);
       
-      // Show modern toast notification for task creation
       toast.success(`Task Created: ${formData.title}`, {
         description: "Your task has been created successfully",
         duration: 4000,
@@ -96,7 +94,6 @@ const TodoApp = () => {
       setEditingTask(undefined);
       setIsFormOpen(false);
       
-      // Show modern toast notification for task update
       toast.success(`Task Updated: ${formData.title}`, {
         description: "Your task has been updated successfully",
         duration: 4000,
@@ -182,13 +179,7 @@ const TodoApp = () => {
             <Plus className="mr-2 h-4 w-4" /> New Task
           </Button>
           
-          <Button 
-            variant="outline"
-            onClick={logout}
-            className="flex items-center"
-          >
-            <LogOut className="mr-2 h-4 w-4" /> Logout
-          </Button>
+          <AppNavigation />
         </div>
       </header>
 

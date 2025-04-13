@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Search, SlidersHorizontal, CheckCircle } from "lucide-react";
+import { Search, SlidersHorizontal, CheckCircle, LayoutGrid, LayoutList } from "lucide-react";
 import TaskItem from "./TaskItem";
+import TaskGroupedByDate from "./TaskGroupedByDate";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TaskListProps {
   tasks: Task[];
@@ -17,6 +19,7 @@ interface TaskListProps {
 }
 
 type SortOption = "dueDate" | "priority" | "createdAt";
+type ViewMode = "list" | "grouped";
 
 const TaskList = ({
   tasks,
@@ -28,6 +31,7 @@ const TaskList = ({
   const [showCompleted, setShowCompleted] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("dueDate");
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   // Filter tasks based on search term and completion status
   const filteredTasks = tasks.filter(task => {
@@ -100,7 +104,7 @@ const TaskList = ({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <Button
               variant={showCompleted ? "default" : "outline"}
               size="sm"
@@ -114,23 +118,45 @@ const TaskList = ({
         </div>
       )}
 
-      {incompleteTasks > 0 && (
-        <div className="text-sm text-muted-foreground">
-          {incompleteTasks} {incompleteTasks === 1 ? 'task' : 'tasks'} remaining
-        </div>
-      )}
+      <div className="flex justify-between items-center">
+        {incompleteTasks > 0 && (
+          <div className="text-sm text-muted-foreground">
+            {incompleteTasks} {incompleteTasks === 1 ? 'task' : 'tasks'} remaining
+          </div>
+        )}
+        
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="ml-auto">
+          <TabsList className="h-8">
+            <TabsTrigger value="list" className="h-7">
+              <LayoutList className="h-4 w-4 mr-1" /> List
+            </TabsTrigger>
+            <TabsTrigger value="grouped" className="h-7">
+              <LayoutGrid className="h-4 w-4 mr-1" /> By Date
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       <div className="space-y-1">
         {sortedTasks.length > 0 ? (
-          sortedTasks.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
+          viewMode === "list" ? (
+            sortedTasks.map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                onToggleComplete={onToggleComplete}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            ))
+          ) : (
+            <TaskGroupedByDate
+              tasks={sortedTasks}
               onToggleComplete={onToggleComplete}
               onEdit={onEdit}
               onDelete={onDelete}
             />
-          ))
+          )
         ) : (
           <div className="text-center py-8">
             <p className="text-muted-foreground">No tasks found</p>

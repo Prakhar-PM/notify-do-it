@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Task, TaskFormData, Priority } from "@/types/task";
 import { Button } from "@/components/ui/button";
@@ -12,18 +11,20 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Clock, Tag, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface TaskFormProps {
   task?: Task;
   onSubmit: (data: TaskFormData) => void;
   onCancel: () => void;
+  initialDueDate?: Date | null;
 }
 
-const TaskForm = ({ task, onSubmit, onCancel }: TaskFormProps) => {
+const TaskForm = ({ task, onSubmit, onCancel, initialDueDate }: TaskFormProps) => {
   const [formData, setFormData] = useState<TaskFormData>({
     title: task?.title || "",
     description: task?.description || "",
-    dueDate: task?.dueDate ? new Date(task.dueDate) : null,
+    dueDate: task?.dueDate ? new Date(task.dueDate) : initialDueDate || null,
     priority: task?.priority || "medium",
     tags: task?.tags || [],
   });
@@ -203,7 +204,5 @@ const TaskForm = ({ task, onSubmit, onCancel }: TaskFormProps) => {
     </form>
   );
 };
-
-import { Badge } from "@/components/ui/badge";
 
 export default TaskForm;
