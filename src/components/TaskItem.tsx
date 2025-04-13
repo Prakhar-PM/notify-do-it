@@ -9,6 +9,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { Clock, Edit, Trash2, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface TaskItemProps {
   task: Task;
@@ -32,6 +42,7 @@ const priorityColors: Record<Priority, string> = {
 const TaskItem = ({ task, onToggleComplete, onEdit, onDelete }: TaskItemProps) => {
   const { toast } = useToast();
   const [isCompleting, setIsCompleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleToggleComplete = () => {
     setIsCompleting(true);
@@ -44,6 +55,17 @@ const TaskItem = ({ task, onToggleComplete, onEdit, onDelete }: TaskItemProps) =
     });
     
     setTimeout(() => setIsCompleting(false), 300);
+  };
+
+  const handleDelete = () => {
+    onDelete(task.id);
+    setDeleteDialogOpen(false);
+    toast({
+      title: "Task deleted",
+      description: task.title,
+      variant: "destructive",
+      duration: 2000,
+    });
   };
 
   return (
@@ -122,21 +144,30 @@ const TaskItem = ({ task, onToggleComplete, onEdit, onDelete }: TaskItemProps) =
           <Button 
             size="icon" 
             variant="ghost" 
-            onClick={() => {
-              onDelete(task.id);
-              toast({
-                title: "Task deleted",
-                description: task.title,
-                variant: "destructive",
-                duration: 2000,
-              });
-            }}
+            onClick={() => setDeleteDialogOpen(true)}
             className="h-8 w-8 text-destructive hover:text-destructive/90"
           >
             <Trash2 size={16} />
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the task "{task.title}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

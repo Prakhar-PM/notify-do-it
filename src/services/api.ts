@@ -25,6 +25,22 @@ api.interceptors.request.use(
   }
 );
 
+// Add response interceptor to handle errors
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // Don't logout on 404 or other non-auth errors
+    if (error.response && error.response.status === 401) {
+      // Only handle 401 Unauthorized errors
+      localStorage.removeItem('userToken');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth API calls
 export const registerUser = async (userData: { name: string; email: string; password: string }) => {
   const response = await api.post('/users', userData);

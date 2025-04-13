@@ -4,6 +4,7 @@ import { Task, TaskFormData } from "@/types/task";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Plus, LogOut } from "lucide-react";
 import TaskList from "@/components/TaskList";
 import TaskForm from "@/components/TaskForm";
@@ -23,7 +24,7 @@ const TodoApp = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const { user, logout } = useAuth();
 
   // Fetch tasks from API
@@ -35,7 +36,7 @@ const TodoApp = () => {
         setTasks(tasksData);
       } catch (error) {
         console.error("Error fetching tasks:", error);
-        toast({
+        uiToast({
           title: "Error fetching tasks",
           description: "Please try again later",
           variant: "destructive",
@@ -60,13 +61,16 @@ const TodoApp = () => {
 
       setTasks(prev => [newTask, ...prev]);
       setIsFormOpen(false);
-      toast({
-        title: "Task created",
+      
+      // Show modern toast notification for task creation
+      toast.success(`Task Created: ${formData.title}`, {
         description: "Your task has been created successfully",
-        duration: 3000,
+        duration: 4000,
+        icon: "✅",
       });
+      
     } catch (error) {
-      toast({
+      uiToast({
         title: "Error creating task",
         description: "Please try again",
         variant: "destructive",
@@ -91,13 +95,15 @@ const TodoApp = () => {
       ));
       setEditingTask(undefined);
       setIsFormOpen(false);
-      toast({
-        title: "Task updated",
+      
+      // Show modern toast notification for task update
+      toast.success(`Task Updated: ${formData.title}`, {
         description: "Your task has been updated successfully",
-        duration: 3000,
+        duration: 4000,
       });
+      
     } catch (error) {
-      toast({
+      uiToast({
         title: "Error updating task",
         description: "Please try again",
         variant: "destructive",
@@ -112,7 +118,7 @@ const TodoApp = () => {
         task.id === id ? updatedTask : task
       ));
     } catch (error) {
-      toast({
+      uiToast({
         title: "Error updating task",
         description: "Please try again",
         variant: "destructive",
@@ -125,7 +131,7 @@ const TodoApp = () => {
       await apiDeleteTask(id);
       setTasks(prev => prev.filter(task => task.id !== id));
     } catch (error) {
-      toast({
+      uiToast({
         title: "Error deleting task",
         description: "Please try again",
         variant: "destructive",
