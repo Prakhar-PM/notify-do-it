@@ -4,45 +4,18 @@ import { Task, TaskFormData } from "@/types/task";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus } from "lucide-react";
+import { Plus, LogOut } from "lucide-react";
 import TaskList from "@/components/TaskList";
 import TaskForm from "@/components/TaskForm";
 import EmptyState from "@/components/EmptyState";
-import { v4 as uuidv4 } from "uuid";
-
-// Mock data - to be replaced with API calls
-const mockTasks: Task[] = [
-  {
-    id: uuidv4(),
-    title: "Complete project proposal",
-    description: "Prepare the project proposal document for the client meeting",
-    completed: false,
-    dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-    priority: "high",
-    tags: ["work", "urgent"],
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: uuidv4(),
-    title: "Buy groceries",
-    description: "Milk, eggs, bread, and vegetables",
-    completed: false,
-    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-    priority: "medium",
-    tags: ["personal", "shopping"],
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: uuidv4(),
-    title: "Schedule dentist appointment",
-    completed: true,
-    priority: "low",
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-    updatedAt: new Date()
-  }
-];
+import { useAuth } from "@/context/AuthContext";
+import {
+  fetchTasks,
+  createTask as apiCreateTask,
+  updateTask as apiUpdateTask,
+  toggleTaskCompletion,
+  deleteTask as apiDeleteTask
+} from "@/services/api";
 
 const TodoApp = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -51,18 +24,15 @@ const TodoApp = () => {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   
   const { toast } = useToast();
+  const { user, logout } = useAuth();
 
-  // Simulate API fetch
+  // Fetch tasks from API
   useEffect(() => {
-    const fetchTasks = async () => {
+    const loadTasks = async () => {
       try {
-        // In a real app, this would be an API call
-        // const response = await fetch('/api/tasks');
-        // const data = await response.json();
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setTasks(mockTasks);
+        setIsLoading(true);
+        const tasksData = await fetchTasks();
+        setTasks(tasksData);
       } catch (error) {
         console.error("Error fetching tasks:", error);
         toast({
@@ -75,76 +45,92 @@ const TodoApp = () => {
       }
     };
 
-    fetchTasks();
+    loadTasks();
   }, []);
 
-  const handleCreateTask = (formData: TaskFormData) => {
-    const newTask: Task = {
-      id: uuidv4(),
-      title: formData.title,
-      description: formData.description,
-      completed: false,
-      dueDate: formData.dueDate,
-      priority: formData.priority,
-      tags: formData.tags,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+  const handleCreateTask = async (formData: TaskFormData) => {
+    try {
+      const newTask = await apiCreateTask({
+        title: formData.title,
+        description: formData.description,
+        dueDate: formData.dueDate,
+        priority: formData.priority,
+        tags: formData.tags
+      });
 
-    // In a real app, this would be an API call
-    // await fetch('/api/tasks', { method: 'POST', body: JSON.stringify(newTask) })
-
-    setTasks(prev => [newTask, ...prev]);
-    setIsFormOpen(false);
-    toast({
-      title: "Task created",
-      description: "Your task has been created successfully",
-      duration: 3000,
-    });
+      setTasks(prev => [newTask, ...prev]);
+      setIsFormOpen(false);
+      toast({
+        title: "Task created",
+        description: "Your task has been created successfully",
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: "Error creating task",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUpdateTask = (formData: TaskFormData) => {
+  const handleUpdateTask = async (formData: TaskFormData) => {
     if (!editingTask) return;
 
-    const updatedTask: Task = {
-      ...editingTask,
-      title: formData.title,
-      description: formData.description,
-      dueDate: formData.dueDate,
-      priority: formData.priority,
-      tags: formData.tags,
-      updatedAt: new Date()
-    };
+    try {
+      const updatedTask = await apiUpdateTask(editingTask.id, {
+        title: formData.title,
+        description: formData.description,
+        dueDate: formData.dueDate,
+        priority: formData.priority,
+        tags: formData.tags
+      });
 
-    // In a real app, this would be an API call
-    // await fetch(`/api/tasks/${editingTask.id}`, { method: 'PUT', body: JSON.stringify(updatedTask) })
-
-    setTasks(prev => prev.map(task => 
-      task.id === editingTask.id ? updatedTask : task
-    ));
-    setEditingTask(undefined);
-    setIsFormOpen(false);
-    toast({
-      title: "Task updated",
-      description: "Your task has been updated successfully",
-      duration: 3000,
-    });
+      setTasks(prev => prev.map(task => 
+        task.id === editingTask.id ? updatedTask : task
+      ));
+      setEditingTask(undefined);
+      setIsFormOpen(false);
+      toast({
+        title: "Task updated",
+        description: "Your task has been updated successfully",
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: "Error updating task",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleToggleComplete = (id: string, completed: boolean) => {
-    // In a real app, this would be an API call
-    // await fetch(`/api/tasks/${id}/complete`, { method: 'PATCH', body: JSON.stringify({ completed }) })
-
-    setTasks(prev => prev.map(task => 
-      task.id === id ? { ...task, completed, updatedAt: new Date() } : task
-    ));
+  const handleToggleComplete = async (id: string, completed: boolean) => {
+    try {
+      const updatedTask = await toggleTaskCompletion(id, completed);
+      setTasks(prev => prev.map(task => 
+        task.id === id ? updatedTask : task
+      ));
+    } catch (error) {
+      toast({
+        title: "Error updating task",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteTask = (id: string) => {
-    // In a real app, this would be an API call
-    // await fetch(`/api/tasks/${id}`, { method: 'DELETE' })
-
-    setTasks(prev => prev.filter(task => task.id !== id));
+  const handleDeleteTask = async (id: string) => {
+    try {
+      await apiDeleteTask(id);
+      setTasks(prev => prev.filter(task => task.id !== id));
+    } catch (error) {
+      toast({
+        title: "Error deleting task",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleOpenForm = () => {
@@ -182,13 +168,30 @@ const TodoApp = () => {
           </p>
         </div>
 
-        <Button 
-          onClick={handleOpenForm} 
-          className="bg-todo-primary hover:bg-todo-secondary transition-colors"
-        >
-          <Plus className="mr-2 h-4 w-4" /> New Task
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleOpenForm} 
+            className="bg-todo-primary hover:bg-todo-secondary transition-colors"
+          >
+            <Plus className="mr-2 h-4 w-4" /> New Task
+          </Button>
+          
+          <Button 
+            variant="outline"
+            onClick={logout}
+            className="flex items-center"
+          >
+            <LogOut className="mr-2 h-4 w-4" /> Logout
+          </Button>
+        </div>
       </header>
+
+      {user && (
+        <div className="mb-6 text-sm">
+          <span className="text-muted-foreground">Logged in as: </span>
+          <span className="font-medium">{user.name}</span>
+        </div>
+      )}
 
       <main>
         {isLoading ? (
